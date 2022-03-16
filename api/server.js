@@ -14,11 +14,16 @@ connectDB();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// routes -- userRoutes
+// routes -- main
 app.get('/', (req, res) => {
     res.status(200).json({ message: 'Welcome to the helpdesk app' });
 });
+
+// routes -- userRoutes
 app.use('/api/users', require('./routes/userRoutes'));
+
+// routes -- ticketRoutes
+app.use('/api/tickets', require('./routes/ticketRoutes'));
 
 // error handler
 app.use(errorHandler);
