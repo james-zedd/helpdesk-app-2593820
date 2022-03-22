@@ -22,7 +22,7 @@ app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/tickets', require('./routes/ticketRoutes'));
 
 // map production frontend to build folder in react
-if (process.env.NODE_ENV === production) {
+if (process.env.NODE_ENV === 'production') {
     app.use(express.static(path.join(_dirname, '../client/build')));
     app.get('*', (req, res) =>
         res.sendFile(__dirname, '../', 'client', 'build', 'index.html')
