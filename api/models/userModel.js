@@ -14,7 +14,7 @@ const userSchema = mongoose.Schema(
             type: String,
             required: [true, 'Please enter a password'],
         },
-        isAdmin: {
+        isStaff: {
             type: Boolean,
             required: true,
             default: false,
@@ -24,6 +24,9 @@ const userSchema = mongoose.Schema(
             required: true,
             default: false,
         },
+        assignedTickets: [
+            { type: mongoose.Schema.Types.ObjectId, ref: 'Ticket' },
+        ],
     },
     {
         timestamps: true,

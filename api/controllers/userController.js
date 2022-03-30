@@ -80,12 +80,43 @@ const getme = asyncHandler(async (req, res) => {
         id: req.user._id,
         name: req.user.name,
         email: req.user.email,
-        isAdmin: req.user.isAdmin,
+        isStaff: req.user.isStaff,
         isManager: req.user.isManager,
+        assignedTickets: req.user.assignedTickets,
     };
     res.status(200).json({
         status: 200,
         data: user,
+    });
+});
+
+// @desc   get staff users
+// @route  GET /api/users/staff
+// @auth?  true
+const getStaffUsers = asyncHandler(async (req, res) => {
+    // get user by id in JWT
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+        res.status(401);
+        throw new Error('user not found');
+    }
+
+    if (!user.isManager) {
+        res.status(403);
+        throw new Error('Must be a manager to use this feature.');
+    }
+
+    const name = new RegExp(req.query.name, 'i');
+
+    const staffUsers = await User.find({
+        name: { $regex: name },
+        isStaff: true,
+    });
+
+    res.status(200).json({
+        status: 200,
+        data: staffUsers,
     });
 });
 
@@ -100,4 +131,5 @@ module.exports = {
     registerUser,
     loginUser,
     getme,
+    getStaffUsers,
 };
