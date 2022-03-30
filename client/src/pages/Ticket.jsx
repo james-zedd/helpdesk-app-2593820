@@ -39,6 +39,7 @@ function Ticket() {
     const { notes, isLoading: notesIsLoading } = useSelector(
         (state) => state.notes
     );
+    const { user } = useSelector((state) => state.auth);
 
     const params = useParams();
     const navigate = useNavigate();
@@ -67,6 +68,14 @@ function Ticket() {
         e.preventDefault();
         dispatch(createNote({ noteText, ticketId }));
         closeModal();
+    };
+
+    const onAssignTicket = (e) => {
+        e.preventDefault();
+    };
+
+    const onKeyUp = (e) => {
+        e.preventDefault();
     };
 
     if (isLoading || notesIsLoading) {
@@ -101,6 +110,23 @@ function Ticket() {
                 <div className='ticket-desc'>
                     <h3>Description of issue</h3>
                     <p>{ticket.description}</p>
+                </div>
+                <div className='assign-ticket'>
+                    {user.isManager && (
+                        <form onSubmit={onAssignTicket}>
+                            <label htmlFor='findStaff'>
+                                Choose Staff to assign ticket to:
+                            </label>
+                            <input
+                                type='text'
+                                name='findStaff'
+                                onKeyUp={onKeyUp}
+                            />
+                            <button className='btn' type='submit'>
+                                Assign
+                            </button>
+                        </form>
+                    )}
                 </div>
                 <h2>Notes</h2>
             </header>

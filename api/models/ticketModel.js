@@ -26,6 +26,10 @@ const ticketSchema = mongoose.Schema(
             type: Boolean,
             default: false,
         },
+        assignedTo: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+        },
     },
     {
         timestamps: true,

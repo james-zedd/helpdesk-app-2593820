@@ -64,7 +64,9 @@ const loginUser = asyncHandler(async (req, res) => {
             _id: user._id,
             name: user.name,
             email: user.email,
-            token: generateToken(user._id),
+            token: generateToken(user._id, user.isStaff, user.isManager),
+            isStaff: user.isStaff,
+            isManager: user.isManager,
         });
     } else {
         res.status(401);
@@ -121,8 +123,8 @@ const getStaffUsers = asyncHandler(async (req, res) => {
 });
 
 // generate token
-const generateToken = (id) => {
-    return jwt.sign({ id }, process.env.JWT_SECRET, {
+const generateToken = (id, isStaff, isManager) => {
+    return jwt.sign({ id, isStaff, isManager }, process.env.JWT_SECRET, {
         expiresIn: '20m',
     });
 };

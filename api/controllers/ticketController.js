@@ -7,15 +7,25 @@ const Ticket = require('../models/ticketModel');
 // @route  GET /api/tickets
 // @auth?  true
 const getTickets = asyncHandler(async (req, res) => {
-    // get user by id in JWT
-    const user = await User.findById(req.user.id);
+    // get user by id in JWT. also check if is staff
+    let user;
+    let tickets;
+
+    if (req.user.isManager) {
+        user = await User.findById(req.user.id);
+        tickets = await Ticket.find();
+    } else if (req.user.isStaff) {
+        user = await User.findById(req.user.id).populate('assignedTickets');
+        tickets = user.assignedTickets;
+    } else {
+        user = await User.findById(req.user.id);
+        tickets = await Ticket.find({ user: req.user.id });
+    }
 
     if (!user) {
         res.status(401);
         throw new Error('user not found');
     }
-
-    const tickets = await Ticket.find({ user: req.user.id });
 
     res.status(200).json(tickets);
 });
@@ -32,19 +42,22 @@ const getTicket = asyncHandler(async (req, res) => {
         throw new Error('user not found');
     }
 
-    const ticket = await Ticket.findById(req.params.id);
+    const ticket = await Ticket.findById(req.params.id).populate('assignedTo', [
+        'name',
+        'email',
+    ]);
 
     if (!ticket) {
         res.status(404);
         throw new Error('ticket not found');
     }
 
-    if (ticket.user.toString() !== req.user.id) {
+    if (ticket.user.toString() == req.user.id || req.user.isStaff) {
+        res.status(200).json(ticket);
+    } else {
         res.status(401);
         throw new Error('not authorized');
     }
-
-    res.status(200).json(ticket);
 });
 
 // @desc   create new ticket
@@ -236,11 +249,10 @@ const assignTicketToStaff = asyncHandler(async (req, res) => {
     await staff.save();
 
     ticket.isAssigned = true;
+    ticket.assignedTo = staff._id;
     await ticket.save();
 
-    const staffTickets = await User.findById(staffId).populate(
-        'assignedTickets'
-    );
+    const staffTickets = await Ticket.findById(ticketId).populate('assignedTo');
 
     res.status(200).json({
         status: 200,
