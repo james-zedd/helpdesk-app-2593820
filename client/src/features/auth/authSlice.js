@@ -52,6 +52,25 @@ export const logout = createAsyncThunk('/auth/logout', async () => {
     await authService.logout();
 });
 
+// get all staff members
+export const getAllStaff = createAsyncThunk(
+    '/users/staff',
+    async (token, thunkAPI) => {
+        try {
+            return await authService.getAllStaff(token);
+        } catch (error) {
+            const message =
+                (error.response &&
+                    error.response.data &&
+                    error.response.data.message) ||
+                error.message ||
+                error.toString();
+
+            return thunkAPI.rejectWithValue(message);
+        }
+    }
+);
+
 export const authSlice = createSlice({
     name: 'auth',
     initialState: initialState,
@@ -61,6 +80,7 @@ export const authSlice = createSlice({
             state.isError = false;
             state.isSuccess = false;
             state.message = '';
+            state.staffUsers = [];
         },
     },
     extraReducers: (builder) => {
@@ -95,6 +115,20 @@ export const authSlice = createSlice({
             })
             .addCase(logout.fulfilled, (state) => {
                 state.user = null;
+            })
+            .addCase(getAllStaff.pending, (state) => {
+                state.isLoading = true;
+            })
+            .addCase(getAllStaff.fulfilled, (state, action) => {
+                state.isLoading = false;
+                state.isSuccess = true;
+                state.staffUsers = action.payload;
+            })
+            .addCase(getAllStaff.rejected, (state, action) => {
+                state.isLoading = false;
+                state.isError = true;
+                state.message = action.payload;
+                state.staffUsers = null;
             });
     },
 });

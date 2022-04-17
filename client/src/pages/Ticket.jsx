@@ -1,12 +1,18 @@
 import { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getTicket, closeTicket, reset } from '../features/tickets/ticketSlice';
+import {
+    getTicket,
+    closeTicket,
+    assignTicketToStaff,
+    reset,
+} from '../features/tickets/ticketSlice';
 import {
     getNotes,
     createNote,
     reset as notesReset,
 } from '../features/notes/noteSlice';
+import { getAllStaff } from '../features/auth/authSlice';
 import { BackButton } from '../components/BackButton';
 import Spinner from '../components/Spinner';
 import NoteItem from '../components/NoteItem';
@@ -32,6 +38,9 @@ Modal.setAppElement('#root');
 function Ticket() {
     const [modalIsOpen, setModalIsOpen] = useState(false);
     const [noteText, setNoteText] = useState('');
+    const [showAssignTicektForm, setShowAssignTicketForm] = useState(false);
+    const [staffMember, setStaffMember] = useState('');
+
     const { ticket, isLoading, isSuccess, isError, message } = useSelector(
         (state) => state.tickets
     );
@@ -39,7 +48,10 @@ function Ticket() {
     const { notes, isLoading: notesIsLoading } = useSelector(
         (state) => state.notes
     );
+
     const { user } = useSelector((state) => state.auth);
+
+    const { staffUsers } = useSelector((state) => state.auth);
 
     const params = useParams();
     const navigate = useNavigate();
@@ -53,12 +65,19 @@ function Ticket() {
 
         dispatch(getTicket(ticketId));
         dispatch(getNotes(ticketId));
-    }, [isError, message, ticketId, dispatch]);
+        if (user.isManager) {
+            dispatch(getAllStaff(user.token));
+        }
+    }, [isError, message, ticketId, user, dispatch]);
 
     const onTicketClose = () => {
-        dispatch(closeTicket(ticketId));
-        toast.success('Ticket closed');
-        navigate('/tickets');
+        if (window.confirm('Do you really want to close this ticket')) {
+            dispatch(closeTicket(ticketId));
+            toast.success('Ticket closed');
+            navigate('/tickets');
+        } else {
+            toast.error('Ticket not closed');
+        }
     };
 
     const openModal = () => setModalIsOpen(true);
@@ -72,10 +91,16 @@ function Ticket() {
 
     const onAssignTicket = (e) => {
         e.preventDefault();
-    };
 
-    const onKeyUp = (e) => {
-        e.preventDefault();
+        if (staffMember == '') {
+            console.log('no staff chosen');
+            toast.error(
+                'Please choose a staff member to assign the ticket to.'
+            );
+            return;
+        }
+
+        dispatch(assignTicketToStaff({ ticketId, staffMember }));
     };
 
     if (isLoading || notesIsLoading) {
@@ -106,26 +131,40 @@ function Ticket() {
                     {new Date(ticket.createdAt).toLocaleString('en-US')}
                 </h3>
                 <h3>Product: {ticket.product}</h3>
+                {ticket.isAssigned && (
+                    <h3>Assigned To: {ticket.assignedTo.name}</h3>
+                )}
                 <hr />
                 <div className='ticket-desc'>
                     <h3>Description of issue</h3>
                     <p>{ticket.description}</p>
                 </div>
                 <div className='assign-ticket'>
-                    {user.isManager && (
+                    {user.isManager & !ticket.isAssigned ? (
                         <form onSubmit={onAssignTicket}>
                             <label htmlFor='findStaff'>
                                 Choose Staff to assign ticket to:
                             </label>
-                            <input
-                                type='text'
+                            <select
                                 name='findStaff'
-                                onKeyUp={onKeyUp}
-                            />
+                                id='findStaff'
+                                onChange={(e) => setStaffMember(e.target.value)}
+                            >
+                                <option selected disabled>
+                                    Choose a staff member
+                                </option>
+                                {staffUsers.map((staff) => (
+                                    <option key={staff._id} value={staff._id}>
+                                        {staff.name}
+                                    </option>
+                                ))}
+                            </select>
                             <button className='btn' type='submit'>
                                 Assign
                             </button>
                         </form>
+                    ) : (
+                        ''
                     )}
                 </div>
                 <h2>Notes</h2>

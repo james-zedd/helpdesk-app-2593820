@@ -245,11 +245,17 @@ const assignTicketToStaff = asyncHandler(async (req, res) => {
         throw new Error('ticket not found');
     }
 
+    if (ticket.isAssigned) {
+        res.status(400);
+        throw new Error('ticket is already assigned');
+    }
+
     staff.assignedTickets.push(ticket._id);
     await staff.save();
 
     ticket.isAssigned = true;
     ticket.assignedTo = staff._id;
+    ticket.status = 'open';
     await ticket.save();
 
     const staffTickets = await Ticket.findById(ticketId).populate('assignedTo');

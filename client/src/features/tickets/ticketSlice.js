@@ -90,6 +90,32 @@ export const closeTicket = createAsyncThunk(
     }
 );
 
+// assign ticket to staff
+export const assignTicketToStaff = createAsyncThunk(
+    'tickets/assign',
+    async (ticketData, thunkAPI) => {
+        try {
+            const token = thunkAPI.getState().auth.user.token;
+            const ticketId = ticketData.ticketId;
+            const staffId = ticketData.staffMember;
+            return await ticketService.assignTicketToStaff(
+                token,
+                ticketId,
+                staffId
+            );
+        } catch (error) {
+            const message =
+                (error.response &&
+                    error.response.data &&
+                    error.response.data.message) ||
+                error.message ||
+                error.toString();
+
+            return thunkAPI.rejectWithValue(message);
+        }
+    }
+);
+
 export const ticketSlice = createSlice({
     name: 'ticket',
     initialState,
@@ -143,6 +169,19 @@ export const ticketSlice = createSlice({
                         ? (ticket.status = 'closed')
                         : ticket
                 );
+            })
+            .addCase(assignTicketToStaff.pending, (state) => {
+                state.isLoading = true;
+            })
+            .addCase(assignTicketToStaff.fulfilled, (state, action) => {
+                state.isLoading = false;
+                state.isSuccess = true;
+                state.ticket = action.payload;
+            })
+            .addCase(assignTicketToStaff.rejected, (state, action) => {
+                state.isLoading = false;
+                state.isError = true;
+                state.message = action.payload;
             });
     },
 });
