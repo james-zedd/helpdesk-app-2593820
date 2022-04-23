@@ -8,12 +8,21 @@ const {
     createTicket,
     deleteTicket,
     updateTicket,
+    getStaffTickets,
+    getAllTickets,
+    assignTicketToStaff,
 } = require('../controllers/ticketController');
 
 // re-route into note router
 router.use('/:ticketId/notes', noteRouter);
 
 router.route('/').get(protect, getTickets).post(protect, createTicket);
+
+router.route('/staff').get(protect, getStaffTickets);
+
+router.route('/manager').get(protect, getAllTickets);
+
+router.route('/manager/assign').post(protect, assignTicketToStaff);
 
 router
     .route('/:id')

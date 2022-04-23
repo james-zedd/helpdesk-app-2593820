@@ -18,12 +18,9 @@ const getNotes = asyncHandler(async (req, res) => {
 
     const tickets = await Ticket.findById(req.params.ticketId);
 
-    if (tickets.user.toString() !== req.user.id) {
-        res.status(401);
-        throw new Error('User not authorized');
-    }
-
-    const notes = await Note.find({ ticket: req.params.ticketId });
+    const notes = await Note.find({ ticket: req.params.ticketId }).populate(
+        'user'
+    );
 
     res.status(200).json(notes);
 });
@@ -42,16 +39,11 @@ const addNote = asyncHandler(async (req, res) => {
 
     const tickets = await Ticket.findById(req.params.ticketId);
 
-    if (tickets.user.toString() !== req.user.id) {
-        res.status(401);
-        throw new Error('User not authorized');
-    }
-
     const note = await Note.create({
         text: req.body.text,
         ticket: req.params.ticketId,
-        isStaff: false,
-        user: req.user.id,
+        isStaff: user.isStaff,
+        user: user,
     });
 
     res.status(200).json(note);

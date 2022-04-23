@@ -58,11 +58,30 @@ const closeTicket = async (ticketId, token) => {
     return response.data;
 };
 
+// assign ticket to staff
+const assignTicketToStaff = async (token, ticketId, staffId) => {
+    const config = {
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    };
+
+    const body = {
+        ticketId: ticketId,
+        staffId: staffId,
+    };
+
+    const response = await axios.post(API_URL + 'manager/assign', body, config);
+
+    return response.data;
+};
+
 const ticketService = {
     createTicket,
     getTickets,
     getTicket,
     closeTicket,
+    assignTicketToStaff,
 };
 
 export default ticketService;
