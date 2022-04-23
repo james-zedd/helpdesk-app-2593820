@@ -27,10 +27,24 @@ const login = async (userData) => {
 // log out user
 const logout = () => localStorage.removeItem('user');
 
+// get all staff
+const getAllStaff = async (token) => {
+    const config = {
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    };
+
+    const response = await axios.get(API_URL + '/staff', config);
+
+    return response.data.data;
+};
+
 const authService = {
     register,
     logout,
     login,
+    getAllStaff,
 };
 
 export default authService;

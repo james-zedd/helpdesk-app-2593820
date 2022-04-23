@@ -4,7 +4,7 @@ const User = require('../models/userModel');
 const jwt = require('jsonwebtoken');
 
 // @desc   Register a new user
-// @route  /api/users
+// @route  POST /api/users
 // @auth?  false
 const registerUser = asyncHandler(async (req, res) => {
     const { name, email, password } = req.body;
@@ -51,7 +51,7 @@ const registerUser = asyncHandler(async (req, res) => {
 });
 
 // @desc   login a user
-// @route  /api/users/login
+// @route  POST /api/users/login
 // @auth?  false
 const loginUser = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
@@ -64,7 +64,9 @@ const loginUser = asyncHandler(async (req, res) => {
             _id: user._id,
             name: user.name,
             email: user.email,
-            token: generateToken(user._id),
+            token: generateToken(user._id, user.isStaff, user.isManager),
+            isStaff: user.isStaff,
+            isManager: user.isManager,
         });
     } else {
         res.status(401);
@@ -73,13 +75,16 @@ const loginUser = asyncHandler(async (req, res) => {
 });
 
 // @desc   get current user
-// @route  /api/users/me
+// @route  GET /api/users/me
 // @auth?  true
 const getme = asyncHandler(async (req, res) => {
     const user = {
         id: req.user._id,
         name: req.user.name,
         email: req.user.email,
+        isStaff: req.user.isStaff,
+        isManager: req.user.isManager,
+        assignedTickets: req.user.assignedTickets,
     };
     res.status(200).json({
         status: 200,
@@ -87,9 +92,39 @@ const getme = asyncHandler(async (req, res) => {
     });
 });
 
+// @desc   get staff users
+// @route  GET /api/users/staff
+// @auth?  true
+const getStaffUsers = asyncHandler(async (req, res) => {
+    // get user by id in JWT
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+        res.status(401);
+        throw new Error('user not found');
+    }
+
+    if (!user.isManager) {
+        res.status(403);
+        throw new Error('Must be a manager to use this feature.');
+    }
+
+    const name = new RegExp(req.query.name, 'i');
+
+    const staffUsers = await User.find({
+        name: { $regex: name },
+        isStaff: true,
+    });
+
+    res.status(200).json({
+        status: 200,
+        data: staffUsers,
+    });
+});
+
 // generate token
-const generateToken = (id) => {
-    return jwt.sign({ id }, process.env.JWT_SECRET, {
+const generateToken = (id, isStaff, isManager) => {
+    return jwt.sign({ id, isStaff, isManager }, process.env.JWT_SECRET, {
         expiresIn: '20m',
     });
 };
@@ -98,4 +133,5 @@ module.exports = {
     registerUser,
     loginUser,
     getme,
+    getStaffUsers,
 };
